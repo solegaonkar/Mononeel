@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.KeyEvent;
+import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
@@ -13,9 +15,9 @@ import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String analysisDisplayFormat = "Nozzles: %d x %d\nTotal: %d\n\n" +
-            "Layout:\nOffset from edges: %.1f, %.1f\n" +
-            "Distances: %.1f, %.1f\n\n" +
+    private static final String analysisDisplayFormat = "Nozzle Count:\n  %d  x  %d  =  %d\n\n" +
+            "Layout:\n  Offset from edges:\n    %.1f, %.1f\n" +
+            "  Distance between lines:\n    %.1f, %.1f\n\n" +
             "Maximum Gap: %.2f;\n";
 
     private double x=0, y=0, r =0, s =0;
@@ -23,10 +25,33 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.activity_main);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
 
         addListeners();
+        refreshAnalysis();
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if ((keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)){
+            changeSeparation(-1);
+        } else if ((keyCode == KeyEvent.KEYCODE_VOLUME_UP)){
+            changeSeparation(1);
+        }
+        return true;
+    }
+
+    private void changeSeparation(int i) {
+        SeekBar sbGap = findViewById(R.id.sbSeparation);
+        int p = sbGap.getProgress() + i;
+        sbGap.setProgress(p);
         refreshAnalysis();
     }
 
@@ -56,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
         r = readNumber(etRadius);
 
         square = shape.getCheckedRadioButtonId() == R.id.radioSquare;
-        s = (sbGap.getProgress() - 4.0) / 4;
+        s = (sbGap.getProgress() - 8.0) / 8;
     }
 
     private int readNumber(EditText etFieldSizeX) {
@@ -85,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
                 distanceY = Math.floor(10 * (y - edgeYOffset) / (ny - 1))/10;
 
                 double theta = Math.atan(distanceX / (2 * distanceY)) * 2;
-                maxGap = distanceX / (2 * Math.sin(theta)) - r;
+                maxGap = 2 * (distanceX / (2 * Math.sin(theta)) - r);
             } else {
                 double sx = (r + s) * Math.sqrt(2);
                 double sy = (r + s) * Math.sqrt(2);
